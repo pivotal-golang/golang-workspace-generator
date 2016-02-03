@@ -25,19 +25,24 @@ func main() {
 
 	os.Setenv("GOPATH", tmpDir)
 
-	installGinkgo := exec.Command(
-		goToolPath,
-		"get", "github.com/onsi/ginkgo/ginkgo",
-	)
-
-	outBytes, err := installGinkgo.CombinedOutput()
-	if err != nil {
-		log.Fatalf("installing ginkgo: %s", string(outBytes))
-	}
+	installPackage("github.com/golang/lint/golint")
+	installPackage("github.com/onsi/ginkgo/ginkgo")
 
 	variablesString := fmt.Sprintf("GOPATH=%s PATH=%s/bin:$PATH GO15VENDOREXPERIMENT=1", tmpDir, tmpDir)
 	expandedVariablesString := os.ExpandEnv(variablesString)
 
 	fmt.Println(expandedVariablesString)
 	os.Exit(0)
+}
+
+func installPackage(packageName string) {
+	installCmd := exec.Command(
+		goToolPath,
+		"get", packageName,
+	)
+
+	outBytes, err := installCmd.CombinedOutput()
+	if err != nil {
+		log.Fatalf("installing %s: %s", packageName, string(outBytes))
+	}
 }
