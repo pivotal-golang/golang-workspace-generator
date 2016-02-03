@@ -8,15 +8,12 @@ import (
 	"os/exec"
 )
 
+// Usage: `eval $(workspace-generator)`
 func main() {
+	// set log output to STDERR, because STDOUT is what the caller will eval.
 	log.SetOutput(os.Stderr)
 
-	goToolPath, err := exec.LookPath("go")
-	if err != nil {
-		log.Fatalln("finding go executable")
-	}
-
-	log.Printf("using go at %s", goToolPath)
+	log.Printf("using go at %s", goBinary())
 
 	tmpDir, err := ioutil.TempDir("", "generated-go-workspace")
 	if err != nil {
@@ -28,16 +25,17 @@ func main() {
 	installPackage("github.com/golang/lint/golint")
 	installPackage("github.com/onsi/ginkgo/ginkgo")
 
-	variablesString := fmt.Sprintf("GOPATH=%s PATH=%s/bin:$PATH GO15VENDOREXPERIMENT=1", tmpDir, tmpDir)
-	expandedVariablesString := os.ExpandEnv(variablesString)
+	fmt.Printf("export GOPATH=%s\n", tmpDir)
+	fmt.Printf("export PATH=%s/bin:$PATH\n", tmpDir)
+	fmt.Printf("export GO15VENDOREXPERIMENT=1\n")
 
-	fmt.Println(expandedVariablesString)
 	os.Exit(0)
 }
 
 func installPackage(packageName string) {
+	log.Printf("Installing package: %s\n", packageName)
 	installCmd := exec.Command(
-		goToolPath,
+		goBinary(),
 		"get", packageName,
 	)
 
@@ -45,4 +43,12 @@ func installPackage(packageName string) {
 	if err != nil {
 		log.Fatalf("installing %s: %s", packageName, string(outBytes))
 	}
+}
+
+func goBinary() string {
+	goToolPath, err := exec.LookPath("go")
+	if err != nil {
+		log.Fatalln("finding go executable")
+	}
+	return goToolPath
 }
